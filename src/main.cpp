@@ -5,11 +5,12 @@
 #include "PaymentGateway.h"
 #include "VCBPayment.h"
 #include "TCBPayment.h"
+#include "MBBankPayment.h"
 
-// Hàm thực hiện kịch bản kiểm thử tự động
+// Hàm thực hiện kịch bản kiểm thử tự động (Demonstrate All Test Cases)
 void runAutomatedTests(PaymentGateway& gateway) {
     std::cout << "\n=======================================================\n";
-    std::cout << "         CHẠY KỊCH BẢN KIỂM THỬ TỰ ĐỘNG                \n";
+    std::cout << "         CHẠY KỊCH BẢN KIỂM THỬ TỰ ĐỘNG (DEMO OCP)     \n";
     std::cout << "=======================================================\n";
 
     // Test Case 1: VCB - Phí cố định 1,100 VND
@@ -20,7 +21,7 @@ void runAutomatedTests(PaymentGateway& gateway) {
         vcb->pay(100000.0);
     }
 
-    // Test Case 2: TCB - Miễn phí 0 VND
+    // Test Case 2: TCB - Miễn phí giao dịch (0 VND)
     std::cout << "\n>>> [TEST CASE 2] Techcombank (TCB) - Miễn phí giao dịch (0 VND)\n";
     auto tcb = gateway.selectBank(2);
     if (tcb) {
@@ -28,8 +29,17 @@ void runAutomatedTests(PaymentGateway& gateway) {
         tcb->pay(50000.0);
     }
 
-    // Test Case 3: Giao dịch thất bại do số dư không đủ
-    std::cout << "\n>>> [TEST CASE 3] Giao dịch thất bại do số dư không đủ\n";
+    // Test Case 3: MBBank - Tính phí 0.2% (Thêm mới theo nguyên tắc OCP)
+    std::cout << "\n>>> [TEST CASE 3] MBBank (MBB) - Tính phí 0.2% số tiền chuyển\n";
+    auto mbb = gateway.selectBank(3);
+    if (mbb) {
+        std::cout << "Thanh toán 200,000 VND từ tài khoản MBBank:\n";
+        std::cout << "(Kỳ vọng: Phí = 200,000 * 0.002 = 400 VND)\n";
+        mbb->pay(200000.0);
+    }
+
+    // Test Case 4: Kiểm tra giao dịch thất bại do vượt quá số dư
+    std::cout << "\n>>> [TEST CASE 4] Giao dịch thất bại do số dư không đủ\n";
     if (tcb) {
         std::cout << "Tài khoản TCB cố gắng chuyển 999,999,999 VND:\n";
         tcb->pay(999999999.0);
@@ -92,9 +102,14 @@ int main() {
     // Khởi tạo cổng điều phối thanh toán PaymentGateway
     PaymentGateway gateway;
 
-    // Nạp các ngân hàng ban đầu theo yêu cầu thiết kế
+    // 1. Nạp các ngân hàng ban đầu theo yêu cầu thiết kế
     gateway.addPaymentMethod(std::make_shared<VCBPayment>("1012345678", 500000.0));
     gateway.addPaymentMethod(std::make_shared<TCBPayment>("1903456789", 200000.0));
+
+    // 2. Minh chứng nguyên tắc OCP (Open/Closed Principle):
+    // Bổ sung ngân hàng thứ ba (MBBankPayment) bằng cách kế thừa BankAccountPayment
+    // Chỉ nạp vào gateway bằng addPaymentMethod() tại main(), KHÔNG sửa đổi các lớp cũ!
+    gateway.addPaymentMethod(std::make_shared<MBBankPayment>("0987654321", 1000000.0));
 
     while (true) {
         std::cout << "=======================================================\n";
